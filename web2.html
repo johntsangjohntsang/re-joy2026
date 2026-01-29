@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【煥・樂】Re:Joy Strategic Dashboard | Elite Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --gold: #b8860b;
+            --gold-light: #d4af37;
+            --bg-main: #f8fafc;
+            --text-main: #1e293b;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow: hidden; 
+        }
+
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+        .text-gold { color: var(--gold); }
+        .bg-gold { background-color: var(--gold); }
+        
+        /* Background Layer */
+        .bg-image-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+        }
+        .bg-image { width: 100%; height: 100%; object-fit: cover; opacity: 0.1; filter: grayscale(100%); }
+
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        .nav-btn.active {
+            background: rgba(184, 134, 11, 0.1);
+            border-left: 4px solid var(--gold);
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        /* Carousel Animation */
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(calc(-350px * 5)); } }
+        .carousel-track { display: flex; width: calc(350px * 10); animation: scroll 40s linear infinite; }
+        .carousel-item { width: 330px; height: 185px; margin-right: 20px; flex-shrink: 0; border-radius: 20px; overflow: hidden; border: 2px solid white; box-shadow: 0 15px 30px rgba(0,0,0,0.1); background: #000; position: relative; }
+        .carousel-item img, .carousel-item video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Pause animation on hover */
+        .carousel-track:hover { animation-play-state: paused; }
+
+        .feature-banner {
+            position: relative; width: 100%; height: 420px; border-radius: 32px; overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15); margin-bottom: 2rem;
+        }
+        .feature-banner img { width: 100%; height: 100%; object-fit: cover; }
+        .feature-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 3rem; background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent); }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        .tab-btn.active { background: var(--gold); color: white; }
+
+        /* Timeline Styling */
+        .timeline-container { max-height: 400px; overflow-y: auto; padding-right: 15px; }
+        .timeline-item { display: flex; gap: 20px; padding-bottom: 25px; border-left: 2px solid #f1f5f9; margin-left: 10px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--gold-light); border: 2px solid white; }
+        .timeline-item.active::before { background: var(--gold); box-shadow: 0 0 0 4px rgba(184, 134, 11, 0.1); }
+
+        .decoration-banner { width: 100%; height: 320px; border-radius: 40px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 20px 50px rgba(0,0,0,0.1); margin-top: 3rem; }
+        .decoration-banner img { width: 100%; height: 100%; object-fit: cover; }
+
+        .loader { border: 3px solid #f1f5f9; border-left-color: var(--gold); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Special Styling for Legend View */
+        .year-badge { 
+            background: linear-gradient(135deg, #b8860b, #fwd700); 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Concert Card Hover */
+        .concert-card:hover .concert-overlay { opacity: 1; }
+        .concert-card:hover img { transform: scale(1.1); }
+
+        /* --- NEW STYLES FOR STORIES MEDIA WALL --- */
+        .tv-frame {
+            border: 8px solid #1a1a1a;
+            border-bottom-width: 12px;
+            border-radius: 20px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .tv-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+            padding: 20px;
+        }
+        .tv-badge {
+            background: #cc0000; color: white; padding: 2px 8px; border-radius: 4px;
+            font-weight: 900; font-size: 10px; text-transform: uppercase;
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        .magazine-card {
+            position: relative; overflow: hidden; border-radius: 4px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.15);
+            transition: transform 0.3s;
+        }
+        .magazine-card:hover { transform: translateY(-5px); }
+        .magazine-title {
+            font-family: 'Times New Roman', serif; font-weight: 900;
+            line-height: 0.8; letter-spacing: -2px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .newspaper-card {
+            background-color: #fcfbf7;
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 10px 10px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .paper-header {
+            border-bottom: 2px solid #1f2937; margin-bottom: 12px; padding-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-full overflow-hidden">
+
+    <div class="bg-image-container">
+        <!-- Abstract Background -->
+        <img src="https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop" class="bg-image" alt="BG Base">
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-20 lg:w-72 h-full bg-white border-r border-slate-200 flex flex-col z-20 transition-all duration-300 shadow-xl">
+        <div class="p-8 border-b border-slate-100 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-gold flex items-center justify-center text-white font-bold text-xl shadow-lg flex-shrink-0">R</div>
+            <div class="hidden lg:block text-left">
+                <h1 class="font-montserrat font-bold text-lg text-slate-800 tracking-tight text-left">Re:Joy Dashboard</h1>
+                <p class="text-[9px] text-gold font-bold tracking-widest uppercase text-left">Elite v5.0 Cinematic</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-6 flex flex-col gap-1 overflow-y-auto custom-scroll text-left">
+            <!-- 1. Concerts (Moved to 1st Position) -->
+            <button onclick="switchView('concerts')" class="nav-btn active flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-ticket w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">舞台印記 Concerts</span></button>
+
+            <!-- 2. Overview (Re:Joy) -->
+            <button onclick="switchView('overview')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-house-chimney w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">煥樂 Re:Joy</span></button>
+            
+            <!-- 3. Artist -->
+            <button onclick="switchView('artist')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-microphone-lines w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">靈魂歌聲 The Artist</span></button>
+            
+            <!-- 4. Legend -->
+            <button onclick="switchView('legend')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-clock-rotate-left w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">直播傳奇 Legend</span></button>
+            
+            <!-- 5. Stories -->
+            <button onclick="switchView('stories')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-newspaper w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">訪問故事 Stories</span></button>
+            
+            <!-- 6. Network (Only Online) -->
+            <button onclick="switchView('network')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-tower-broadcast w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">煥樂網台 Network</span></button>
+            
+            <!-- 7. NEW: Workshops (Moved out from Network) -->
+            <button onclick="switchView('workshops')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-people-group w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">實體工作坊 Workshops</span></button>
+
+            <!-- 8. Ecosystem -->
+            <button onclick="switchView('ecosystem')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-project-diagram w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">生態佈局 Ecosystem</span></button>
+            
+            <!-- 9. Tiers -->
+            <button onclick="switchView('tiers')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-gem w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">夥伴方案 Tiers</span></button>
+            
+            <!-- 10. Impact -->
+            <button onclick="switchView('impact')" class="nav-btn flex items-center px-8 py-4 text-slate-500 hover:text-slate-900 transition-all"><i class="fa-solid fa-chart-line w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-medium text-left">價值模擬 Simulator</span></button>
+            
+            <div class="my-4 border-t border-slate-100 mx-8"></div>
+            <!-- 11. AI -->
+            <button onclick="switchView('ai')" class="nav-btn flex items-center px-8 py-4 text-gold hover:bg-gold/5 transition-all"><i class="fa-solid fa-brain w-6 text-left"></i><span class="hidden lg:block ml-4 text-sm font-bold uppercase text-left">AI 戰略顧問</span></button>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto custom-scroll p-6 lg:p-12 relative text-left" id="main-scroll">
+        
+        <header class="flex justify-between items-end mb-12 max-w-7xl mx-auto animate-fade-in text-left">
+            <div>
+                <h2 id="page-title" class="text-4xl lg:text-6xl font-montserrat font-black text-slate-900 uppercase tracking-tighter mb-2 text-left">Strategic <span class="text-gold text-left">Hub</span></h2>
+                <p class="text-slate-400 text-sm font-bold tracking-widest uppercase text-left">Elite Strategy for the Silver Power Movement</p>
+            </div>
+            <div class="hidden md:block">
+                <div class="px-5 py-2 rounded-full bg-white border border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-widest shadow-sm flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Cinematic Mode Active
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto min-h-[600px] relative text-left">
+
+            <!-- 1. CONCERTS VIEW (舞台印記) -->
+            <section id="concerts-view" class="space-y-12 animate-fade-in text-left">
+                <!-- VIDEO CONTAINER: Updated Source -->
+                <div class="w-full rounded-[40px] overflow-hidden shadow-2xl border-4 border-white mb-10 relative group">
+                    <video 
+                        src="製作熱烈演唱影片.mp4" 
+                        autoplay loop muted playsinline controls
+                        class="w-full h-auto max-h-[500px] object-cover" 
+                        poster="https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=2070&auto=format&fit=crop">
+                    </video>
+                    <div class="absolute top-4 right-4 bg-gold text-white text-[10px] font-black px-3 py-1 rounded-full uppercase shadow-md">LIVE HIGHLIGHT</div>
+                </div>
+
+                <div class="glass-panel p-10 rounded-3xl mb-8 text-left">
+                    <h3 class="text-3xl font-bold text-slate-900 mb-2">輝煌舞台紀錄 Hall of Fame</h3>
+                    <p class="text-slate-500 text-sm">從文化中心到伊利沙伯體育館，每一次登台都是實力與票房的保證。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Concert Card 1 -->
+                    <div class="concert-card relative h-80 rounded-[32px] overflow-hidden group shadow-lg cursor-pointer">
+                        <img src="https://images.unsplash.com/photo-1507838153414-b4b713384ebd?q=80&w=2068&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700" alt="Concert Venue">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 p-8 text-white">
+                            <div class="text-gold font-bold text-[10px] uppercase tracking-widest mb-2">Queen Elizabeth Stadium</div>
+                            <h4 class="text-2xl font-bold">伊利沙伯體育館</h4>
+                            <p class="text-xs text-slate-300 mt-2">個人演唱會・座無虛席</p>
+                        </div>
+                        <div class="concert-overlay absolute inset-0 bg-gold/20 backdrop-blur-[2px] opacity-0 transition-opacity duration-300 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white">
+                                <i class="fa-solid fa-play text-white text-xl ml-1"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concert Card 2 -->
+                    <div class="concert-card relative h-80 rounded-[32px] overflow-hidden group shadow-lg cursor-pointer">
+                        <img src="https://images.unsplash.com/photo-1544211158-b3917d0b3e64?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700" alt="Concert Venue">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 p-8 text-white">
+                            <div class="text-gold font-bold text-[10px] uppercase tracking-widest mb-2">Hong Kong Cultural Centre</div>
+                            <h4 class="text-2xl font-bold">香港文化中心</h4>
+                            <p class="text-xs text-slate-300 mt-2">經典金曲夜・管弦樂團伴奏</p>
+                        </div>
+                         <div class="concert-overlay absolute inset-0 bg-gold/20 backdrop-blur-[2px] opacity-0 transition-opacity duration-300 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white">
+                                <i class="fa-solid fa-play text-white text-xl ml-1"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concert Card 3 -->
+                    <div class="concert-card relative h-80 rounded-[32px] overflow-hidden group shadow-lg cursor-pointer">
+                        <img src="https://images.unsplash.com/photo-1514306191717-452ec28c7814?q=80&w=2069&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700" alt="Concert Venue">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 p-8 text-white">
+                            <div class="text-gold font-bold text-[10px] uppercase tracking-widest mb-2">Hong Kong City Hall</div>
+                            <h4 class="text-2xl font-bold">香港大會堂</h4>
+                            <p class="text-xs text-slate-300 mt-2">慈善籌款晚會・愛心傳送</p>
+                        </div>
+                         <div class="concert-overlay absolute inset-0 bg-gold/20 backdrop-blur-[2px] opacity-0 transition-opacity duration-300 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white">
+                                <i class="fa-solid fa-play text-white text-xl ml-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-[40px] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div>
+                        <h4 class="text-2xl font-bold mb-2">想重溫更多精彩演出？</h4>
+                        <p class="text-slate-400 text-sm">訂閱我們的尊貴會員計劃，解鎖高清 VOD 完整版庫存。</p>
+                    </div>
+                    <button class="bg-gold hover:bg-white hover:text-slate-900 text-white px-8 py-4 rounded-full font-bold transition-all">瀏覽完整片庫</button>
+                </div>
+            </section>
+
+            <!-- 2. OVERVIEW VIEW (煥樂 Re:Joy) -->
+            <section id="overview-view" class="space-y-12 hidden animate-fade-in text-left">
+                <div class="feature-banner">
+                    <!-- Hero Image Updated -->
+                    <img src="Gemini_Generated_Image_iu96hbiu96hbiu96.png" alt="Hero">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                    <div class="glass-panel p-10 rounded-[40px] border-b-4 border-gold text-left hover:-translate-y-2 transition-transform duration-300">
+                        <i class="fa-solid fa-map-location-dot text-3xl text-gold mb-6 text-left"></i>
+                        <div class="text-5xl font-black text-slate-900 text-left">18 <span class="text-xl text-slate-400">Districts</span></div>
+                        <p class="text-sm text-slate-500 mt-4 font-medium text-left">將舞台搭建在街坊家門口。</p>
+                    </div>
+                    <div class="glass-panel p-10 rounded-[40px] border-b-4 border-gold text-left hover:-translate-y-2 transition-transform duration-300">
+                        <i class="fa-solid fa-users text-3xl text-gold mb-6 text-left"></i>
+                        <div class="text-5xl font-black text-slate-900 text-left">2.6 <span class="text-xl text-slate-400 text-left">Million</span></div>
+                        <p class="text-sm text-slate-500 mt-4 font-medium text-left">精準觸達高淨值群眾。</p>
+                    </div>
+                    <div class="glass-panel p-10 rounded-[40px] border-b-4 border-gold text-left hover:-translate-y-2 transition-transform duration-300">
+                        <i class="fa-solid fa-chart-line text-3xl text-gold mb-6 text-left"></i>
+                        <div class="text-5xl font-black text-slate-900 text-left">55 <span class="text-xl text-slate-400 text-left">% Asset</span></div>
+                        <p class="text-sm text-slate-500 mt-4 font-medium text-left">解鎖核心財富持有者情感入口。</p>
+                    </div>
+                </div>
+
+                <div class="space-y-8 pt-10 border-t border-slate-200 overflow-hidden text-left">
+                    <div class="text-center text-left"><h4 class="text-2xl font-bold text-slate-900 text-left">萬人支持・情感見證</h4><p class="text-slate-400 text-sm mt-1">Live Cinematic Evidence of Social Impact</p></div>
+                    <div class="carousel-track text-left">
+                        <div class="carousel-item">
+                            <img src="Gemini_Generated_Image_9ebem99ebem99ebe.png" alt="Resonance">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="Gemini_Generated_Image_btw1xrbtw1xrbtw1.png" alt="Support">
+                        </div>
+                        <div class="carousel-item">
+                            <!-- Video Updated -->
+                            <video 
+                                src="製作熱烈演唱影片.mp4" 
+                                poster="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1974&auto=format&fit=crop"
+                                autoplay loop muted playsinline 
+                                class="w-full h-full object-cover">
+                            </video>
+                            <div class="absolute bottom-2 right-2 bg-red-600 text-white text-[9px] px-2 py-1 rounded font-bold uppercase animate-pulse">Live Cam</div>
+                        </div>
+                        <div class="carousel-item">
+                            <img src="Gemini_Generated_Image_g1uae0g1uae0g1ua.png" alt="Crowd">
+                        </div>
+                        <div class="carousel-item">
+                            <!-- Reusing Crowd image as placeholder for Stage, or we can use another uploaded one if available -->
+                            <img src="Gemini_Generated_Image_g1uae0g1uae0g1ua.png" alt="Stage">
+                        </div>
+                        <!-- Loop duplicates -->
+                        <div class="carousel-item"><img src="Gemini_Generated_Image_9ebem99ebem99ebe.png" alt="Resonance"></div>
+                        <div class="carousel-item"><img src="Gemini_Generated_Image_btw1xrbtw1xrbtw1.png" alt="Support"></div>
+                        <div class="carousel-item"><video src="製作熱烈演唱影片.mp4" poster="https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1974&auto=format&fit=crop" autoplay loop muted playsinline class="w-full h-full object-cover"></video></div>
+                        <div class="carousel-item"><img src="Gemini_Generated_Image_g1uae0g1uae0g1ua.png" alt="Crowd"></div>
+                        <div class="carousel-item"><img src="Gemini_Generated_Image_g1uae0g1uae0g1ua.png" alt="Stage"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. ARTIST VIEW (靈魂歌聲) -->
+            <section id="artist-view" class="space-y-12 hidden animate-fade-in text-left">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-[48px] overflow-hidden bg-white shadow-2xl border border-slate-100 text-left">
+                    <div class="lg:col-span-6 relative h-[600px] lg:h-auto text-left group">
+                        <!-- Artist Portrait Updated -->
+                        <img src="Gemini_Generated_Image_s1onubs1onubs1on.png" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Artist Portrait">
+                        <div class="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
+                    </div>
+                    <div class="lg:col-span-6 p-12 lg:p-16 flex flex-col justify-center text-left">
+                        <h4 class="text-gold font-black text-xs tracking-widest mb-6 uppercase text-left">The Soul Voice</h4>
+                        <h3 class="text-4xl font-bold text-slate-900 mb-8 leading-tight text-left">用歌聲重啟「青春時光機」</h3>
+                        
+                        <div class="space-y-12 text-left text-left">
+                            <p class="text-lg text-slate-600 font-light leading-relaxed text-left">我們深信，歌聲是穿越時光的唯一媒介。歌手將從直播屏幕回歸真實舞台，每月深耕一區，帶領長者重啟三十歲時的活力與熱情。</p>
+                            
+                            <div class="bg-slate-50 p-8 rounded-[40px] border border-slate-100 text-left text-left">
+                                <h5 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3 text-left"><i class="fa-solid fa-calendar-alt text-gold text-left"></i> 十八區巡演模擬部署 (Monthly Rollout Schedule)</h5>
+                                <div class="timeline-container custom-scroll text-left" id="district-timeline"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crowd Image Updated -->
+                <div class="w-full h-80 rounded-[40px] overflow-hidden shadow-2xl border-4 border-white relative group">
+                     <img src="Gemini_Generated_Image_g1uae0g1uae0g1ua.png" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Crowd Atmosphere">
+                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-10">
+                        <div class="text-white">
+                            <h4 class="text-2xl font-bold mb-2">萬人共鳴・星海相伴</h4>
+                            <p class="text-sm opacity-80">每一支螢光棒，都是一份溫暖的陪伴。</p>
+                        </div>
+                     </div>
+                </div>
+            </section>
+
+            <!-- 4. LEGEND VIEW (直播傳奇) -->
+            <section id="legend-view" class="space-y-12 hidden animate-fade-in text-left">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="relative h-[500px] rounded-[48px] overflow-hidden shadow-2xl group border-4 border-white">
+                        <img src="Gemini_Generated_Image_4vby0l4vby0l4vby.png" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Broadcast Legend">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 p-10 text-white">
+                            <div class="bg-gold text-white text-[10px] font-black px-3 py-1 rounded-full uppercase mb-4 inline-block shadow-md">On Air Since 2014</div>
+                            <h3 class="text-4xl font-bold mb-2">十年一覺廣播夢</h3>
+                            <p class="text-sm opacity-80 font-light">每一個清晨，都是與聽眾的靈魂之約。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-8">
+                        <div class="glass-panel p-10 rounded-[40px] border-l-8 border-gold">
+                            <h3 class="text-6xl font-black text-slate-900 mb-2">10 <span class="text-2xl text-slate-400 font-medium">Years</span></h3>
+                            <h4 class="text-xl font-bold text-slate-800 mb-4">廣播界的溫暖傳奇</h4>
+                            <p class="text-slate-600 leading-relaxed">這不僅僅是廣播，這是一種生活儀式。十年來，無論風雨，這把聲音始終如一地在電波中守候。</p>
+                        </div>
+
+                        <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-lg flex items-center gap-6">
+                            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-2xl">
+                                <i class="fa-solid fa-sun"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-slate-900 text-lg">招牌問候：「早晨！」</h5>
+                                <p class="text-xs text-slate-500 mt-1">一句簡單的早晨，喚醒了無數沈睡的心靈，成為社區中最溫暖的集體記憶。</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-6 bg-slate-900 rounded-[28px] text-white text-center">
+                                <div class="text-3xl font-black text-gold mb-1">3,650+</div>
+                                <div class="text-[10px] uppercase tracking-widest opacity-60">Days On Air</div>
+                            </div>
+                            <div class="p-6 bg-white rounded-[28px] border border-slate-100 text-center shadow-sm">
+                                <div class="text-3xl font-black text-slate-800 mb-1">∞</div>
+                                <div class="text-[10px] uppercase tracking-widest text-slate-400">Emotional Bonds</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-10 rounded-[40px] text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gold to-transparent opacity-50"></div>
+                    <i class="fa-solid fa-quote-left text-4xl text-slate-200 mb-6 block"></i>
+                    <p class="text-2xl md:text-3xl font-serif text-slate-700 italic leading-relaxed max-w-4xl mx-auto mb-10">
+                        「這十年間，無論晴天雨天，這一聲『早晨』從未缺席。它不僅是開場白，更是我們與聽眾之間最默契的約定。」
+                    </p>
+                    
+                    <div class="flex flex-col items-center gap-6">
+                        <a href="https://www.youtube.com/watch?v=3vzRN5yiFBc&list=PLYTXU6B_ZNPAEmkyRG7p3YJ6Rr_2mymrv" target="_blank" class="group relative inline-flex items-center gap-4 bg-slate-900 text-white pl-8 pr-10 py-5 rounded-full font-bold text-lg shadow-xl hover:shadow-2xl hover:bg-slate-800 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                            <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-gold/0 via-gold/10 to-gold/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+                            <span class="relative flex h-3 w-3">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                            <span class="tracking-widest">點擊收聽・今日早晨</span>
+                            <i class="fa-solid fa-arrow-right-long group-hover:translate-x-1 transition-transform text-gold"></i>
+                        </a>
+                        
+                        <div class="flex items-center gap-3 opacity-60">
+                            <span class="h-px w-12 bg-slate-300"></span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Access the Legend</span>
+                            <span class="h-px w-12 bg-slate-300"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. STORIES VIEW (Revamped Media Wall) -->
+            <section id="stories-view" class="space-y-10 hidden animate-fade-in text-left">
+                
+                <div class="flex items-center gap-4 mb-2">
+                    <div class="w-1.5 h-12 bg-red-600 rounded-full"></div>
+                    <div>
+                        <h3 class="text-3xl font-bold text-slate-900">全球媒體聚焦 Media Spotlight</h3>
+                        <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Diverse Coverage Across Platforms</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- 1. TV NEWS INTERVIEW (Prime Time) -->
+                    <div class="lg:col-span-8 tv-frame min-h-[400px] group cursor-pointer">
+                        <!-- Use concert video loop as "Live Feed" background -->
+                        <video src="製作熱烈演唱影片.mp4" autoplay loop muted playsinline class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"></video>
+                        
+                        <!-- TV UI Elements -->
+                        <div class="absolute top-6 left-6 flex items-center gap-3">
+                            <div class="tv-badge">LIVE</div>
+                            <div class="bg-white/20 backdrop-blur text-white px-2 py-1 text-[10px] font-bold rounded">CH 8 NEWS</div>
+                        </div>
+                        <div class="absolute top-6 right-6 flex flex-col items-end text-white/80 text-[10px] font-mono">
+                            <span>HKG 19:30</span>
+                            <span>TEMP 24°C</span>
+                        </div>
+
+                        <!-- Lower Thirds -->
+                        <div class="tv-overlay">
+                            <div class="flex items-end gap-4">
+                                <div class="bg-blue-600 text-white p-4 rounded-sm shadow-lg flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider opacity-90">Exclusive Interview</span>
+                                    </div>
+                                    <h4 class="text-xl md:text-2xl font-bold leading-tight">王者歸來：深入剖析「煥樂」現象級影響力</h4>
+                                </div>
+                                <div class="hidden md:block bg-slate-900 text-white p-4 rounded-sm shadow-lg w-48">
+                                    <div class="text-[9px] text-slate-400 uppercase">Topic</div>
+                                    <div class="text-xs font-bold text-gold">#SilverEconomy</div>
+                                    <div class="text-xs font-bold">#CommunityLove</div>
+                                </div>
+                            </div>
+                            <div class="bg-white text-slate-900 text-[10px] font-bold py-1 px-4 mt-2 inline-block marquee">
+                                <span class="uppercase text-red-600 mr-2">Breaking:</span> 全港十八區巡演門票火速售罄，加開特別場次洽談中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. FASHION MAGAZINE COVER (High End) -->
+                    <div class="lg:col-span-4 magazine-card bg-slate-100 h-full min-h-[400px]">
+                        <img src="Gemini_Generated_Image_4vby0l4vby0l4vby.png" class="absolute inset-0 w-full h-full object-cover" alt="Magazine Cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30"></div>
+                        <div class="absolute top-0 left-0 w-full p-6 text-center">
+                            <h1 class="magazine-title text-6xl text-white/90 mb-1">TIMELESS</h1>
+                            <p class="text-white text-[9px] font-bold tracking-[0.4em] uppercase border-b border-white/50 pb-2 inline-block">The Icon Issue • Mar 2026</p>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full p-6 text-white">
+                            <h5 class="text-3xl font-serif italic leading-none mb-2">The Soul <br>of the City</h5>
+                            <p class="text-xs font-light opacity-90 line-clamp-3">「我不是在表演，我是在與這座城市談戀愛。」專訪樂壇常青樹，細訴十年廣播情緣。</p>
+                            <div class="mt-4 w-12 h-12 bg-gold rounded-full flex items-center justify-center text-black font-black text-xs shadow-lg rotate-12">
+                                TOP<br>10
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. INTERNATIONAL NEWSPAPER (London) -->
+                    <div class="lg:col-span-4 newspaper-card p-6 rounded-xl">
+                        <div class="paper-header">
+                            <h5 class="font-serif font-bold text-xl text-slate-900">The London Post</h5>
+                            <span class="text-[9px] text-slate-500 font-bold uppercase">Culture / Arts</span>
+                        </div>
+                        <h4 class="font-serif font-bold text-lg mb-2 leading-tight">Hong Kong's "Silver Power" Phenomenon</h4>
+                        <p class="text-[10px] text-slate-600 font-serif leading-relaxed text-justify mb-4">
+                            <span class="float-left text-2xl font-black mr-1 mt-[-6px]">A</span> new wave of cultural movement is sweeping through the communities. Dubbed "Re:Joy", this initiative proves that music transcends age...
+                        </p>
+                        <div class="flex items-center gap-2 mt-auto pt-4 border-t border-slate-200">
+                            <img src="https://images.unsplash.com/photo-1526218626217-dc65a29bb444?q=80&w=2070&auto=format&fit=crop" class="w-8 h-8 rounded-full object-cover grayscale">
+                            <div class="text-[9px]">
+                                <div class="font-bold text-slate-800">Sarah Jenkins</div>
+                                <div class="text-slate-400">Senior Editor, London</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. TECH/BUSINESS MEDIA (Tokyo) -->
+                    <div class="lg:col-span-4 bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <h5 class="font-bold text-slate-900 text-sm">Nikkei Tech Review</h5>
+                            </div>
+                            <span class="text-[9px] bg-slate-100 px-2 py-1 rounded text-slate-500">Tokyo</span>
+                        </div>
+                        <div class="relative h-32 rounded-lg overflow-hidden mb-4">
+                            <img src="Gemini_Generated_Image_9ebem99ebem99ebe.png" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                <i class="fa-solid fa-play-circle text-white text-3xl opacity-80"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-sm mb-2">Age-Tech Meets Soul Music</h4>
+                        <p class="text-[10px] text-slate-500 leading-relaxed mb-3">How AI and live streaming are redefining entertainment for the elderly generation in Asia.</p>
+                        <div class="mt-auto flex gap-2">
+                            <span class="text-[9px] border border-slate-200 px-2 py-1 rounded">#Innovation</span>
+                            <span class="text-[9px] border border-slate-200 px-2 py-1 rounded">#FutureTrends</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. SOCIAL MEDIA HIGHLIGHT -->
+                    <div class="lg:col-span-4 bg-gradient-to-br from-purple-600 to-blue-600 p-6 rounded-xl text-white shadow-lg relative overflow-hidden">
+                        <i class="fa-brands fa-instagram absolute -bottom-4 -right-4 text-9xl opacity-10"></i>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full border-2 border-white p-0.5">
+                                <img src="Gemini_Generated_Image_4vby0l4vby0l4vby.png" class="w-full h-full rounded-full object-cover">
+                            </div>
+                            <div>
+                                <div class="font-bold text-sm">ReJoy_Official</div>
+                                <div class="text-[9px] opacity-80">Sponsored • via Instagram</div>
+                            </div>
+                        </div>
+                        <p class="text-sm font-medium mb-4 leading-relaxed">"Thank you for the overwhelming love! 18 Districts, 18 Nights of miracles. See you soon! ✨🎤"</p>
+                        <div class="flex gap-4 text-xs font-bold opacity-90">
+                            <span><i class="fa-regular fa-heart"></i> 48.2K</span>
+                            <span><i class="fa-regular fa-comment"></i> 2,304</span>
+                            <span><i class="fa-solid fa-share"></i> 15K</span>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 6. NETWORK VIEW (Now Online Focused) -->
+            <section id="network-view" class="space-y-10 hidden animate-fade-in text-left">
+                <div class="glass-panel p-10 rounded-3xl border-l-4 border-blue-500 text-left">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2 text-left text-left">空中煥樂網台內容生態 Matrix</h3>
+                    <p class="text-slate-500 font-light text-sm text-left">24/7 高品質內容矩陣，建立與品牌的高黏性連接。</p>
+                </div>
+                
+                <!-- Updated Tabs: Only Learning & Online -->
+                <div class="flex flex-wrap gap-4 mb-8 text-left">
+                    <button onclick="switchChannel('learning')" id="tab-learning" class="tab-btn active px-8 py-3 rounded-full text-sm font-bold border border-slate-200 transition-all text-left">教學頻道 (Learning)</button>
+                    <button onclick="switchChannel('online')" id="tab-online" class="tab-btn px-8 py-3 rounded-full text-sm font-bold border border-slate-200 transition-all text-left">線上互動室 (Live)</button>
+                </div>
+
+                <!-- Content Containers -->
+                <div id="content-learning" class="channel-content grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left"></div>
+                <div id="content-online" class="channel-content grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden text-left text-left"></div>
+            </section>
+
+            <!-- 7. NEW: WORKSHOPS VIEW (Standalone) -->
+            <section id="workshops-view" class="space-y-10 hidden animate-fade-in text-left">
+                <div class="glass-panel p-10 rounded-3xl border-l-4 border-green-500 text-left">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2 text-left text-left">社區互動工作坊 Community Workshops</h3>
+                    <p class="text-slate-500 font-light text-sm text-left">深入社區實體連結，創造面對面的溫暖回憶。</p>
+                </div>
+                
+                <!-- Workshop Content Container -->
+                <div id="content-offline" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left"></div>
+
+                <!-- Workshops Decoration: Golden Lines (Replaced Image) -->
+                <div class="w-full flex flex-col items-center justify-center gap-2 mt-16 mb-8 opacity-60">
+                    <div class="w-full h-px bg-gradient-to-r from-transparent via-gold to-transparent"></div>
+                    <div class="w-2/3 h-px bg-gradient-to-r from-transparent via-gold to-transparent"></div>
+                    <div class="w-1/3 h-px bg-gradient-to-r from-transparent via-gold to-transparent"></div>
+                    <i class="fa-solid fa-gem text-gold text-xs mt-2"></i>
+                </div>
+            </section>
+
+            <!-- 8. ECOSYSTEM VIEW -->
+            <section id="ecosystem-view" class="space-y-10 hidden animate-fade-in text-left">
+                <div class="glass-panel p-10 rounded-3xl mb-12 text-left"><h3 class="text-2xl font-bold text-slate-900 mb-2 text-left">全方位 O2O 樂齡生態戰略</h3></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left text-left">
+                    <div class="p-8 bg-white border border-slate-100 rounded-[40px] hover:shadow-xl transition-all text-left"><div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-6 text-left"><i class="fa-solid fa-rss"></i></div><h4 class="font-bold text-lg mb-4 text-left">1. 內容分發系統</h4><ul class="text-xs text-slate-500 space-y-2 font-medium"><li>• 網台直播 & VOD 庫</li><li>• 理財與康養專欄</li></ul></div>
+                    <div class="p-8 bg-white border border-slate-100 rounded-[40px] hover:shadow-xl transition-all text-left"><div class="w-12 h-12 bg-gold/10 rounded-2xl flex items-center justify-center text-gold mb-6 text-left text-left"><i class="fa-solid fa-location-arrow"></i></div><h4 class="font-bold text-lg mb-4 text-left">2. 地面巡演網絡</h4><ul class="text-xs text-slate-500 space-y-2 font-medium text-left text-left"><li>• 十八區月度巡演</li><li>• 現場身心健康博覽</li></ul></div>
+                    <div class="p-8 bg-white border border-slate-100 rounded-[40px] hover:shadow-xl transition-all text-left"><div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-6 text-left"><i class="fa-solid fa-fingerprint"></i></div><h4 class="font-bold text-lg mb-4 text-left">3. 數據中樞中樞</h4><ul class="text-xs text-slate-500 space-y-2 font-medium text-left"><li>• 高淨值客戶標籤系統</li><li>• O2O 轉換歸因追蹤</li></ul></div>
+                    <div class="p-8 bg-white border border-slate-100 rounded-[40px] hover:shadow-xl transition-all text-left text-left"><div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 mb-6 text-left"><i class="fa-solid fa-users-viewfinder"></i></div><h4 class="font-bold text-lg mb-4 text-left">4. ESG 影響力評估</h4><ul class="text-xs text-slate-500 space-y-2 font-medium text-left"><li>• 孤獨感消除量化指標</li><li>• 社區志願服務回饋</li></ul></div>
+                    <div class="p-8 bg-white border border-slate-100 rounded-[40px] hover:shadow-xl transition-all text-left text-left text-left"><div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-6 text-left"><i class="fa-solid fa-lightbulb text-left"></i></div><h4 class="font-bold text-lg mb-4 text-left">5. 內容共創模組</h4><ul class="text-xs text-slate-500 space-y-2 font-medium text-left"><li>• 品牌深度植入節目</li><li>• 跨界聯名社區企劃</li></ul></div>
+                    <div class="p-8 bg-white border border-slate-100 rounded-[40px] hover:shadow-xl transition-all text-left text-left text-left text-left"><div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6 text-left"><i class="fa-solid fa-diamond text-left"></i></div><h4 class="font-bold text-lg mb-4 text-left">6. VIP 尊貴體驗</h4><ul class="text-xs text-slate-500 space-y-2 font-medium text-left"><li>• 巡演 VVIP 定制包廂</li><li>• 歌手私人茶聚環節</li></ul></div>
+                </div>
+            </section>
+
+            <!-- 9. TIERS VIEW -->
+            <section id="tiers-view" class="space-y-10 hidden animate-fade-in text-left">
+                <div class="bg-white rounded-[48px] overflow-hidden border border-slate-100 shadow-xl text-left">
+                    <div class="p-10 border-b border-slate-50 flex items-center justify-between text-left text-left"><h3 class="text-2xl font-bold text-left text-left">戰略夥伴方案矩陣 Matrix</h3></div>
+                    <div class="overflow-x-auto custom-scroll text-left">
+                        <table class="w-full text-left border-collapse min-w-[900px] text-left text-left text-left">
+                            <thead>
+                                <tr class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 text-left text-left">
+                                    <th class="p-10 text-left">權益類型</th>
+                                    <th class="p-10 text-center text-blue-500 bg-blue-50/20 text-left text-left">💎 鑽石首席 (Diamond)</th>
+                                    <th class="p-10 text-center text-slate-600 bg-slate-100/40 text-left text-left">🥈 白金戰略 (Platinum)</th>
+                                    <th class="p-10 text-center text-gold text-left text-left">🥇 黃金夥伴 (Gold)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm text-slate-700 text-left text-left text-left text-left">
+                                <tr class="border-b border-slate-50 text-left text-left text-left"><td class="p-10 font-bold text-left">全港唯一冠名</td><td class="p-10 text-center font-black text-left">獨家呈獻「主視覺」</td><td class="p-10 text-center text-slate-300 text-left">—</td><td class="p-10 text-center text-slate-300 text-left text-left">—</td></tr>
+                                <tr class="border-b border-slate-50 text-left text-left text-left"><td class="p-10 font-bold text-left">18區巡演權利</td><td class="p-10 text-center text-left text-left text-left">主場實體攤位 (全線)</td><td class="p-10 text-center text-left text-left text-left">指定 3 區主場特權</td><td class="p-10 text-center text-left text-left text-left">標準廣告露出</td></tr>
+                                <tr class="border-b border-slate-50 text-left text-left text-left"><td class="p-10 font-bold text-left text-left text-left">核心票源控制</td><td class="p-10 text-center text-left text-left text-left text-left text-left">300張/月 + 鑽石包廂</td><td class="p-10 text-center text-left text-left text-left">80張/月 + VIP室</td><td class="p-10 text-center text-left text-left text-left">20張/月</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- 裝飾橫額 -->
+                <div class="decoration-banner text-left">
+                    <!-- Updated Image Source -->
+                    <img src="Gemini_Generated_Image_eymsqgeymsqgeyms.png" alt="Decoration">
+                </div>
+            </section>
+
+            <!-- 10. IMPACT VIEW -->
+            <section id="impact-view" class="space-y-10 hidden animate-fade-in text-left">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 text-left text-left text-left">
+                    <div class="lg:col-span-4 space-y-6 text-left">
+                        <div class="p-8 bg-white border border-slate-100 rounded-[40px] shadow-sm text-left"><h3 class="text-xs font-black text-slate-400 mb-8 uppercase text-left text-left">投入級別</h3><button onclick="setSim('diamond')" id="btn-diamond" class="sim-btn w-full p-6 mb-3 rounded-2xl border border-slate-100 flex justify-between items-center group transition-all text-left text-left"><span class="font-bold text-slate-700 group-hover:text-blue-500">💎 鑽石首席級</span><i class="fa-solid fa-gem text-blue-400 text-left"></i></button><button onclick="setSim('platinum')" id="btn-platinum" class="sim-btn w-full p-6 mb-3 rounded-2xl border border-slate-100 flex justify-between items-center group transition-all text-left text-left"><span class="font-bold text-slate-700 group-hover:text-slate-900 text-left text-left">🥈 白金戰略級</span><i class="fa-solid fa-medal text-slate-300 text-left"></i></button></div>
+                        <div class="p-8 bg-slate-900 rounded-[40px] text-white shadow-xl text-left"><h4 class="font-black text-xs uppercase mb-4 opacity-70 text-left text-left text-left">Total Value</h4><p class="text-5xl font-black mb-2 text-gold text-left">$12.5M+</p><p class="text-[10px] font-bold opacity-60 uppercase tracking-widest text-left">Estimated Annual Social Value</p></div>
+                    </div>
+                    <div class="lg:col-span-8 p-12 bg-white rounded-[48px] border border-slate-100 shadow-2xl relative flex flex-col justify-center text-left text-left text-left">
+                        <h3 class="text-2xl font-bold mb-12 text-left text-left">年度戰略回報預測數據 (Annual ROI)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16 text-left">
+                            <div class="space-y-4 text-left"><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest text-left">Audience Reach</p><div class="flex items-baseline gap-2 text-left"><span id="sim-reach" class="text-8xl font-black text-slate-900 tracking-tighter text-left">0</span><span class="text-gold font-bold text-left">M</span></div><div class="w-full h-1.5 bg-slate-100 rounded-full text-left"><div id="bar-reach" class="h-full bg-gold transition-all duration-1000 text-left text-left"></div></div></div>
+                            <div class="space-y-4 text-left"><p class="text-[10px] text-slate-400 font-black uppercase text-left text-left text-left">ESG Score</p><div class="flex items-baseline gap-2 text-left text-left text-left text-left"><span id="sim-esg" class="text-8xl font-black text-green-600 tracking-tighter text-left text-left text-left">0</span><span class="text-slate-300 font-bold text-left">/100</span></div><div class="w-full h-1.5 bg-slate-100 rounded-full text-left text-left text-left text-left text-left text-left"><div id="bar-esg" class="h-full bg-green-500 transition-all duration-1000 text-left text-left text-left"></div></div></div>
+                        </div>
+                        <ul id="sim-benefits" class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-500 font-medium border-t border-slate-50 pt-10 text-left"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 11. AI ADVISOR -->
+            <section id="ai-view" class="space-y-10 hidden animate-fade-in text-left text-left text-left">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 text-left">
+                    <div class="lg:col-span-4 space-y-6 text-left text-left text-left text-left">
+                        <div class="p-8 bg-slate-900 rounded-[40px] shadow-2xl text-left"><textarea id="ai-input" class="w-full h-48 bg-slate-800 border-none rounded-3xl p-6 text-sm text-white focus:ring-1 focus:ring-gold mb-6 text-left" placeholder="請輸入您的戰略問題..."></textarea><button onclick="runAi()" id="ai-btn" class="w-full bg-gold text-white font-black py-5 rounded-3xl text-left text-left text-left text-left">✨ 生成分析報告</button></div>
+                    </div>
+                    <div id="ai-content-box" class="lg:col-span-8 p-10 bg-white rounded-[40px] border border-slate-100 min-h-[600px] flex flex-col relative text-left text-left text-left text-left text-left text-left"><div id="ai-content" class="flex-1 overflow-y-auto prose prose-slate max-w-none text-slate-700 text-left"></div><div id="ai-loader" class="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 hidden flex-col items-center justify-center text-left text-left"><div class="loader mb-6 text-left"></div><p class="text-slate-800 font-bold animate-pulse text-left text-left text-left">深度演算中...</p></div></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        const config = { apiKey: "", model: "gemini-2.5-flash-preview-09-2025" };
+
+        const networkData = {
+            learning: [
+                { title: "智能手機進階與 AI 應用", cat: "數位科技", desc: "教導長者使用 AI 工具與視像翻譯。" },
+                { title: "銀髮理財：防詐騙錦囊", cat: "理財智慧", desc: "深入淺出分析理財與數位安全。" },
+                { title: "居家伸展：15 分鐘保健", cat: "健康管理", desc: "物理治療師示範輕量居家運動。" },
+                { title: "心靈藝術：和諧粉彩畫", cat: "心靈藝術", desc: "簡單色彩工具釋放心理壓力。" },
+                { title: "跨代溝通：學習孫輩語彙", cat: "家庭關係", desc: "幫助長者與年輕後輩同步。" },
+                { title: "數位攝影：紀錄社區風景", cat: "生活品味", desc: "手機攝影技巧，捕捉生活點滴。" },
+                { title: "健康烹飪：低糖鹽美味食譜", cat: "健康飲食", desc: "營養師與廚師聯手設計課程。" },
+                { title: "旅遊英語：全球自由行", cat: "語言學習", desc: "長者專用的旅行口語手冊。" },
+                { title: "中醫養生：節氣調理法", cat: "中醫智慧", desc: "順應天時的健康管理建議。" },
+                { title: "法律須知：遺囑與繼承", cat: "法律支援", desc: "資深律師講解遺產規劃基礎。" }
+            ],
+            // Split workshop data into offline and online
+            offline: [
+                { title: "北區養生烹飪分享會", cat: "實體活動", desc: "現場與名師學習健康料理。" },
+                { title: "中西區數位科技體驗日", cat: "實體活動", desc: "智慧家具與手機教學博覽。" },
+                { title: "跨代共融卡拉 OK 賽", cat: "實體活動", desc: "長者與青少年組隊競技。" },
+                { title: "經典金曲旗袍攝影節", cat: "線下活動", desc: "重回 60 年代風華人像攝影。" },
+                { title: "樂齡創業小聚：第二人生", cat: "實體活動", desc: "退休後技能變現與興趣社交。" },
+                { title: "草本種植心靈療癒班", cat: "實體活動", desc: "手工盆栽與大自然親密接觸。" },
+                { title: "金融安全防護模擬演練", cat: "實體活動", desc: "現場教學櫃員機安全操作。" },
+                { title: "海濱晨曦太極大會", cat: "實體活動", desc: "百人齊聚，伴隨旋律強身。" },
+                { title: "書法與古琴雅集", cat: "實體活動", desc: "傳統文化深度體驗與靜心。" }
+            ],
+            online: [
+                { title: "歌手心靈對話直播間", cat: "互動直播", desc: "點唱環節與心靈故事分享。" },
+                { title: "中醫視像義診 (Live)", cat: "線上服務", desc: "註冊中醫師線上解答健康疑難。" },
+                { title: "孫輩潮語速成班 (Zoom)", cat: "線上教學", desc: "即時互動學習最新的網絡用語。" },
+                { title: "銀髮理財線上 Q&A", cat: "互動直播", desc: "財務策劃師即時回應退休投資問題。" },
+                { title: "深夜心理輔導熱線", cat: "線上支援", desc: "專業社工通宵在線聆聽。" },
+                { title: "環球旅行雲導賞", cat: "線上旅遊", desc: "跟隨導遊鏡頭，足不出戶遊世界。" }
+            ]
+        };
+
+        const districtData = [
+            { m: "M01", d: "中西區", focus: "文化啟蒙 - 讓歌聲點亮古蹟社區" },
+            { m: "M02", d: "灣仔區", focus: "都會動感 - 節奏與活力的交織" },
+            { m: "M03", d: "東區", focus: "鄰里溫情 - 海濱長廊的集體合唱" },
+            { m: "M04", d: "南區", focus: "自然癒合 - 濤聲中的心靈舒壓" },
+            { m: "M05", d: "油尖旺", focus: "繁華重塑 - 核心商圈的銀髮時尚" },
+            { m: "M06", d: "深水埗", focus: "老區煥新 - 工藝與音樂的跨代對話" },
+            { m: "M07", d: "九龍城", focus: "歲月留聲 - 舊區街坊的情感紐帶" },
+            { m: "M08", d: "黃大仙", focus: "祈福和諧 - 獅子山下的正能量" },
+            { m: "M09", d: "觀塘區", focus: "工業轉型 - 科技與藝術的新共鳴" },
+            { m: "M10", d: "葵青區", focus: "活力連繫 - 交通樞紐的快樂驛站" },
+            { m: "M11", d: "荃灣區", focus: "繽紛生活 - 紡織歷史中的旋律" },
+            { m: "M12", d: "屯門區", focus: "樂活新岸 - 黃金海岸的回春節奏" },
+            { m: "M13", d: "元朗區", focus: "鄉土情懷 - 綠野中的歌聲傳奇" },
+            { m: "M14", d: "北區", focus: "跨境共振 - 邊界新城的發展脈動" },
+            { m: "M15", d: "大埔區", focus: "森呼吸 - 在林木間重拾自然韻律" },
+            { m: "M16", d: "沙田區", focus: "城河共鳴 - 城門河畔的青春回響" },
+            { m: "M17", d: "西貢區", focus: "隱世桃源 - 海洋氣息中的純真悸動" },
+            { m: "M18", d: "離島區", focus: "島嶼慢活 - 遠離塵囂的靈魂之旅" }
+        ];
+
+        const simData = {
+            diamond: { reach: 12.5, esg: 98, benefits: ["全港唯一『呈獻』冠名權", "月度 18 區實體攤位特權", "300張/月 鑽石包廂席位", "網台固定品牌深度專欄", "精準數據 Dashboard 訪問"] },
+            platinum: { reach: 4.8, esg: 82, benefits: ["指定分區場次戰略夥伴權", "主要戶外看板露出", "80張/月 核心 VIP 門票", "網台單次產品深度特寫"] }
+        };
+
+        function switchView(id) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            // Updated btnMap: Added 'workshops', shifted subsequent indices
+            const btnMap = { 
+                'concerts': 0, 
+                'overview': 1, 
+                'artist': 2, 
+                'legend': 3, 
+                'stories': 4,
+                'network': 5, 
+                'workshops': 6, // New
+                'ecosystem': 7, 
+                'tiers': 8, 
+                'impact': 9, 
+                'ai': 10
+            };
+            const idx = btnMap[id];
+            if(idx !== undefined) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`${id}-view`).classList.remove('hidden');
+            const titles = { 
+                'overview': '煥樂 <span class="text-gold">Re:Joy</span>', 
+                'artist': 'Soul of <span class="text-gold">Re:Joy</span>', 
+                'legend': 'Broadcast <span class="text-gold">Legend</span>',
+                'concerts': 'Concert <span class="text-gold">Memoirs</span>',
+                'stories': 'Artist <span class="text-gold">Stories</span>',
+                'network': 'Network <span class="text-gold">Matrix</span>', 
+                'workshops': 'Community <span class="text-gold">Workshops</span>', // New title
+                'ecosystem': 'Ecosystem <span class="text-gold">Pillars</span>', 
+                'tiers': 'Partnership <span class="text-gold">Matrix</span>', 
+                'impact': 'Value <span class="text-gold">Simulator</span>', 
+                'ai': 'AI <span class="text-gold">Advisor</span>' 
+            };
+            document.getElementById('page-title').innerHTML = titles[id] || 'Re:Joy';
+            
+            if(id === 'network') renderNetwork('learning');
+            if(id === 'workshops') renderWorkshops(); // New render call
+            if(id === 'impact') setSim('diamond');
+            if(id === 'artist') renderTimeline();
+            document.getElementById('main-scroll').scrollTop = 0;
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('district-timeline');
+            if(!container) return;
+            container.innerHTML = districtData.map((d, i) => `<div class="timeline-item ${i === 0 ? 'active' : ''} text-left"><div class="w-16 text-gold font-montserrat font-black text-sm text-left">${d.m}</div><div class="flex-1 text-left"><h6 class="font-bold text-slate-800 text-left">${d.d}</h6><p class="text-[11px] text-slate-400 mt-0.5 text-left">${d.focus}</p></div></div>`).join('');
+        }
+
+        function switchChannel(channel) {
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderNetwork(channel);
+        }
+
+        function renderNetwork(channel) {
+            const container = document.getElementById(`content-${channel}`);
+            if(!container) return;
+            document.querySelectorAll('.channel-content').forEach(c => c.classList.add('hidden'));
+            container.classList.remove('hidden');
+            const items = networkData[channel];
+            if(items) {
+                container.innerHTML = items.map(item => `<div class="bg-white p-6 rounded-3xl border border-slate-50 hover:border-gold transition-all group cursor-pointer shadow-sm text-left"><div class="flex justify-between items-start mb-4 text-left"><span class="text-[9px] font-black px-2 py-0.5 bg-slate-900 text-white rounded uppercase text-left">${item.cat}</span><i class="fa-solid fa-play text-gold opacity-0 group-hover:opacity-100 transition-opacity text-left"></i></div><h4 class="font-bold text-slate-900 mb-2 text-left">${item.title}</h4><p class="text-xs text-slate-400 font-light leading-relaxed text-left">${item.desc}</p></div>`).join('');
+            }
+        }
+
+        // New function to render offline workshops specifically
+        function renderWorkshops() {
+            const container = document.getElementById('content-offline');
+            if(!container) return;
+            const items = networkData.offline;
+            container.innerHTML = items.map(item => `<div class="bg-white p-6 rounded-3xl border border-slate-50 hover:border-green-500 transition-all group cursor-pointer shadow-sm text-left"><div class="flex justify-between items-start mb-4 text-left"><span class="text-[9px] font-black px-2 py-0.5 bg-green-600 text-white rounded uppercase text-left">${item.cat}</span><i class="fa-solid fa-location-dot text-green-500 opacity-0 group-hover:opacity-100 transition-opacity text-left"></i></div><h4 class="font-bold text-slate-900 mb-2 text-left">${item.title}</h4><p class="text-xs text-slate-400 font-light leading-relaxed text-left">${item.desc}</p></div>`).join('');
+        }
+
+        function setSim(level) {
+            const data = simData[level];
+            document.querySelectorAll('.sim-btn').forEach(b => { b.classList.remove('border-gold', 'bg-gold/5', 'shadow-lg'); });
+            document.getElementById(`btn-${level}`).classList.add('border-gold', 'bg-gold/5', 'shadow-lg');
+            animateValue("sim-reach", parseFloat(document.getElementById("sim-reach").innerText) || 0, data.reach, 800);
+            animateValue("sim-esg", parseInt(document.getElementById("sim-esg").innerText) || 0, data.esg, 800);
+            document.getElementById('bar-reach').style.width = `${(data.reach/13)*100}%`;
+            document.getElementById('bar-esg').style.width = `${data.esg}%`;
+            document.getElementById('sim-benefits').innerHTML = data.benefits.map(b => `<li class="flex items-center gap-3 text-left text-left"><i class="fa-solid fa-circle-check text-gold text-left"></i>${b}</li>`).join('');
+        }
+
+        function animateValue(id, start, end, duration) {
+            let current = start;
+            const obj = document.getElementById(id);
+            const isFloat = id === "sim-reach";
+            const timer = setInterval(() => {
+                current += (end > start ? (isFloat ? 0.2 : 2) : (isFloat ? -0.2 : -2));
+                if ((end > start && current >= end) || (end < start && current <= end)) { current = end; clearInterval(timer); }
+                obj.innerText = isFloat ? current.toFixed(1) : Math.floor(current);
+            }, 15);
+        }
+
+        async function runAi() {
+            const prompt = document.getElementById('ai-input').value.trim();
+            if(!prompt) return;
+            const content = document.getElementById('ai-content');
+            const loader = document.getElementById('ai-loader');
+            loader.classList.remove('hidden'); loader.classList.add('flex');
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "You are an Elite Strategic Consultant for Re:Joy. Use Traditional Chinese." }] } })
+                });
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "無報告。";
+                content.innerHTML = `<div class="animate-fade-in p-4 bg-slate-50 rounded-3xl border border-slate-100 text-left"><div class="text-slate-800 font-light leading-relaxed text-left text-left">${text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-gold font-bold text-left text-left">$1</strong>')}</div></div>`;
+            } catch (e) { content.innerHTML = "Error."; }
+            finally { loader.classList.add('hidden'); loader.classList.remove('flex'); }
+        }
+
+        window.addEventListener('load', () => { switchView('concerts'); });
+    </script>
+</body>
+</html>
